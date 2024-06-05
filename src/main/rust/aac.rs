@@ -1,4 +1,4 @@
-use fdk_aac_sys::{AACDEC_FLUSH, aacDecoder_Close, aacDecoder_ConfigRaw, aacDecoder_DecodeFrame, aacDecoder_Fill, aacDecoder_GetStreamInfo, aacDecoder_Open, HANDLE_AACDECODER};
+use fdkaac_sys::{AACDEC_FLUSH, aacDecoder_Close, aacDecoder_ConfigRaw, aacDecoder_DecodeFrame, aacDecoder_Fill, aacDecoder_GetStreamInfo, aacDecoder_Open, HANDLE_AACDECODER};
 use jni::JNIEnv;
 use jni::objects::{JByteBuffer, JClass};
 use jni::sys::{jboolean, jint, jlong, jobject};

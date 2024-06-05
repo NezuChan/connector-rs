@@ -18,10 +18,9 @@ codegen-units = 1
 [dependencies]
 jni = { version = "0.19.0" } # jni bindings
 log = "0.4.14"               # logging
-
-fdk-aac-sys = "0.4.0"        # aac
 mpg123-sys = "0.6.0"         # mp3
 ogg-sys = "0.0.9"            # ogg
 vorbis-sys = "0.1.1"         # vorbis
 opusic-sys = "0.5.0"         # opus (v1.5.2)
 libsamplerate = "0.1.0"      # samplerate (c2rust)
+fdkaac-sys = { git = "https://github.com/LuoZijun/rust-fdkaac-sys", version = "0.1.6" } # aac
