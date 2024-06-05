@@ -26,7 +26,7 @@ dependencies {
     testImplementation("dev.kord:kord-core:0.8.0-M11")
 
     testImplementation("com.github.natanbc:lavadsp:0.7.7")
-    testImplementation("com.github.natanbc:native-loader:0.7.2")
+    testImplementation("com.github.natanbc:native-loader:0.7.0")
 }
 
 java {
