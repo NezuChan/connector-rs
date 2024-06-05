@@ -40,7 +40,6 @@ jobs:
         run: ${{ matrix.deps }}
         if: ${{ matrix.deps != '' }}
       - name: Compile natives
-        working-directory: native
         run: cargo build -r --target=${{ matrix.target }}
   windows:
     strategy:
@@ -63,5 +62,4 @@ jobs:
           override: true
           target: ${{ matrix.target }}
       - name: Compile natives
-        working-directory: native
         run: cargo build -r --target=${{ matrix.target }}
