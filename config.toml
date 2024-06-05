@@ -1,3 +1,11 @@
 [build]
 target-dir = "build/rust"
 rustflags = [ "-Ctarget-cpu=native" ]
+
+[target.armv7-unknown-linux-gnueabihf]
+linker = "arm-linux-gnueabihf-gcc"
+rustflags = [
+    "-C", "target-feature=+v7,+thumb2,+vfp3,+neon",
+    "-C", "target-cpu=cortex-a7",
+    "-C", "target-float-abi=hard"
+]
