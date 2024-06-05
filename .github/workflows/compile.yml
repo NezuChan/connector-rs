@@ -10,9 +10,8 @@ jobs:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
-            deps: apt-get install -y g++
           - target: i686-unknown-linux-gnu
-            deps: apt-get install -y g++ libc6-dev
+            deps: apt-get install -y gcc-multilib libc6-dev
           # - target: aarch64-unknown-linux-gnu
           #   deps: apt-get install -y gcc-aarch64-linux-gnu
           # - target: armv7-unknown-linux-gnueabihf
@@ -29,7 +28,7 @@ jobs:
         run: |
           apt-get update -y
           apt-get upgrade -y
-          apt-get install -y cmake curl gcc openjdk-8-jdk-headless
+          apt-get install -y cmake curl g++ gcc openjdk-8-jdk-headless
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af #@v1
         with:
