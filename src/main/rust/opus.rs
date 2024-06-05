@@ -1,4 +1,4 @@
-use audiopus_sys::{opus_decode, opus_decoder_create, opus_decoder_destroy, opus_encode, opus_encoder_create, opus_encoder_ctl, opus_encoder_destroy, OPUS_OK, OPUS_SET_COMPLEXITY_REQUEST, OpusDecoder, OpusEncoder};
+use opusic_sys::{opus_decode, opus_decoder_create, opus_decoder_destroy, opus_encode, opus_encoder_create, opus_encoder_ctl, opus_encoder_destroy, OPUS_OK, OPUS_SET_COMPLEXITY_REQUEST, OpusDecoder, OpusEncoder};
 use jni::JNIEnv;
 use jni::objects::{JByteBuffer, JClass};
 use jni::sys::{jint, jlong, jobject};
