@@ -4,6 +4,7 @@
 out
 bin
 build
-/src/main/resources/natives/**/*
 
 *.env
+
+target

@@ -1,3 +1,0 @@
-[build]
-target-dir = "build/rust"
-rustflags = [ "-Ctarget-cpu=native" ]
