@@ -60,7 +60,7 @@ version = "0.1.0"
 dependencies = [
  "fdk-aac-sys",
  "jni",
- "libsamplerate-sys",
+ "libsamplerate",
  "log",
  "mpg123-sys",
  "ogg-sys",
@@ -119,12 +119,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1bf2e165bb3457c8e098ea76f3e3bc9db55f87aa90d52d0e6be741470916aaa4"
 
 [[package]]
-name = "libsamplerate-sys"
-version = "0.1.10"
+name = "libsamplerate"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "403163258e75b5780cd6245c04cddd7f3166c5f8dd2bf5462e596c9ca4eb9653"
+checksum = "bcbb68a750265482d1b1f70e3b4505da140c73960f8068726e2fd1ffb792c300"
 dependencies = [
- "cmake",
+ "libc",
 ]
 
 [[package]]

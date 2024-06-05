@@ -12,7 +12,7 @@ and [compatible Rust target](https://rust-lang.github.io/rustup/cross-compilatio
 | `linux-aarch64`                      | `aarch64-unknown-linux-gnu`*\*\*   |
 | `linux-arm`                          | `arm-unknown-linux-gnueabi`*\*\*   |
 | `linux-armhf`                        | `arm-unknown-linux-gnueabihf`*\*\* |
-| ~~`linux-musl-x86-64`*\*~~           | ~~`x86_64-unknown-linux-musl`~~    | libsamplerate-sys doesn't have the correct build process for musl support. |
+| `linux-musl-x86-64`                  | `x86_64-unknown-linux-musl`        |
 | `linux-x86-64`                       | `x86_64-unknown-linux-gnu`         |
 | `linux-x86`                          | `i686-unknown-linux-gnu`           |
 | `win-x86-64`                         | `x86_64-pc-windows-msvc`           |

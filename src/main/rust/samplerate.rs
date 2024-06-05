@@ -2,7 +2,7 @@ use std::os::raw::c_long;
 use jni::JNIEnv;
 use jni::objects::{JClass, ReleaseMode};
 use jni::sys::{jboolean, jdouble, jfloatArray, jint, jintArray, jlong};
-use libsamplerate_sys::*;
+use libsamplerate::*;
 use log::debug;
 
 #[no_mangle]
