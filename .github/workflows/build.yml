@@ -35,9 +35,9 @@ jobs:
         if: ${{ matrix.deps != '' }}
         run: |
           sudo dpkg --add-architecture arm64
-          sudo apt-get update -y
+          sudo apt-get update -y --fix-missing || true
           sudo ${{ matrix.deps }}
-          sudo apt-get install -y libmpg123-dev:arm64 libvorbis-dev:arm64
+          sudo apt-get install -y --fix-missing libmpg123-dev:arm64 libvorbis-dev:arm64 || sudo apt-get install -y libmpg123-dev libvorbis-dev
       
       - name: Run Gradle Build
         run: ./gradlew build -Ptarget=${{ matrix.target }}
@@ -77,7 +77,7 @@ jobs:
 
   macos-x86_64:
     name: Build macOS x86_64
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -104,7 +104,7 @@ jobs:
 
   macos-aarch64:
     name: Build macOS aarch64
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -131,7 +131,7 @@ jobs:
 
   macos-universal:
     name: Combine macOS universal binary
-    runs-on: macos-14
+    runs-on: macos-latest
     needs: [macos-x86_64, macos-aarch64]
     steps:
       - name: Checkout sources
