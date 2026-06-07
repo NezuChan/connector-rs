@@ -65,3 +65,34 @@ jobs:
       
       - name: Run Gradle Build
         run: ./gradlew build -Ptarget=${{ matrix.target }}
+
+  macos:
+    name: Build macOS universal binary
+    runs-on: macos-14
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install CMake
+        run: |
+          brew upgrade cmake || brew install cmake
+          cmake --version
+
+      - name: Compile natives
+        run: |
+          rustup target add x86_64-apple-darwin
+          cargo build --release --target=x86_64-apple-darwin
+          rustup target add aarch64-apple-darwin
+          cargo build --release --target=aarch64-apple-darwin
+
+      - name: Create target directory for darwin
+        run: mkdir -p target/darwin/release
+
+      - name: Combine to universal dylib
+        run: lipo -create -output target/darwin/release/libconnector.dylib target/**/release/*.dylib
+
+      - name: Run Gradle Build
+        run: ./gradlew build -Ptarget=darwin -x cargoBuild
