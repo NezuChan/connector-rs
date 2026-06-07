@@ -1,7 +1,7 @@
 use audiopus_sys::{opus_decode, opus_decoder_create, opus_decoder_destroy, opus_encode, opus_encoder_create, opus_encoder_ctl, opus_encoder_destroy, OPUS_OK, OPUS_SET_COMPLEXITY_REQUEST, OpusDecoder, OpusEncoder};
 use jni::JNIEnv;
 use jni::objects::{JByteBuffer, JClass};
-use jni::sys::{jint, jlong, jobject};
+use jni::sys::{jint, jlong};
 use log::debug;
 
 use crate::util::get_direct_short_buffer_address;
@@ -49,7 +49,7 @@ pub extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_opus_OpusDe
 
 #[no_mangle]
 pub extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_opus_OpusDecoderLibrary_decode(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _: JClass,
     decoder_ptr: jlong,
     input_buffer: JByteBuffer,
@@ -61,13 +61,15 @@ pub extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_opus_OpusDe
 
     let decoder = from_ptr!(decoder_ptr as OpusDecoderHandle);
 
-    let input = env.get_direct_buffer_address(&input_buffer)
-        .expect("Unable to resolve input buffer address.");
+    env.with_env(|mut env| -> jni::errors::Result<jint> {
+        let input_ptr = env.get_direct_buffer_address(&input_buffer)?;
+        
+        let output_ptr = env.get_direct_buffer_address(&output_buffer)?;
+        let output_capacity = env.get_direct_buffer_capacity(&output_buffer)?;
+        let output = unsafe { std::slice::from_raw_parts_mut(output_ptr as *mut i16, (output_capacity / 2) as usize) };
 
-    let output = get_direct_short_buffer_address(&env, &output_buffer)
-        .expect("Unable to resolve output buffer address.");
-
-    unsafe { opus_decode(decoder, input.as_ptr(), input_size, output.as_mut_ptr(), frame_size, 0) as i32 }
+        Ok(unsafe { opus_decode(decoder, input_ptr as *const u8, input_size, output.as_mut_ptr(), frame_size, 0) as i32 })
+    }).resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
 // encoder
@@ -110,7 +112,7 @@ pub extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_opus_OpusEn
 
 #[no_mangle]
 pub extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_opus_OpusEncoderLibrary_encode(
-    jni: JNIEnv,
+    mut jni: JNIEnv,
     _: JClass,
     encoder_ptr: jlong,
     input_buffer: JByteBuffer,
@@ -122,19 +124,13 @@ pub extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_opus_OpusEn
 
     let encoder = from_ptr!(encoder_ptr as OpusEncoderHandle);
 
-    let input_ptr = get_direct_short_buffer_address(&jni, &input_buffer)
-        .expect("Unable to resolve input buffer address.")
-        .as_ptr();
+    jni.with_env(|mut env| -> jni::errors::Result<jint> {
+        let input_ptr = env.get_direct_buffer_address(&input_buffer)?;
+        let input_capacity = env.get_direct_buffer_capacity(&input_buffer)?;
+        let input = unsafe { std::slice::from_raw_parts_mut(input_ptr as *mut i16, (input_capacity / 2) as usize) };
+        
+        let output_ptr = env.get_direct_buffer_address(&output_buffer)?;
 
-    let output_ptr = jni.get_direct_buffer_address(&output_buffer)
-        .expect("Unable to resolve output buffer address.")
-        .as_mut_ptr();
-
-    unsafe { opus_encode(encoder, input_ptr, frame_size, output_ptr, output_capacity) as i32 }
-}
-        .as_mut_ptr();
-
-    unsafe {
-        opus_encode(encoder, input_ptr, frame_size, output_ptr, output_capacity)
-    }
+        Ok(unsafe { opus_encode(encoder, input.as_ptr(), frame_size, output_ptr, output_capacity) as i32 })
+    }).resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
