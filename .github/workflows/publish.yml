@@ -129,12 +129,6 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       
-      - name: Install mpg123 via vcpkg
-        run: |
-          vcpkg install mpg123:x64-windows libvorbis:x64-windows --triplet x64-windows
-          echo "VCPKG_ROOT=C:\vcpkg" >> $ENV:GITHUB_ENV
-          echo "PKG_CONFIG_PATH=C:\vcpkg\installed\x64-windows\lib\pkgconfig" >> $ENV:GITHUB_ENV
-      
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -145,6 +139,8 @@ jobs:
       - name: Build and Publish
         run: ./gradlew publish -Ptarget=${{ matrix.target }}
         env:
+          MPG123_NO_PKG_CONFIG: "1"
+          VORBIS_NO_PKG_CONFIG: "1"
           GITHUB_ACTOR: ${{ env.GITHUB_ACTOR }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
