@@ -25,10 +25,9 @@ Supported native platforms:
 
 [![](https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fmaven.pkg.github.com%2FNezuChan%2Fconnector-rs%2Forg%2Fnezu%2Fconnector-native-linux-x86-64%2Fmaven-metadata.xml&query=%2F%2Fmetadata%2Fversioning%2Flatest&label=linux-x86-64&logo=linux&logoColor=white&color=blue)](https://github.com/NezuChan/connector-rs/packages)
 
-**Linux ARM:**
+**Linux ARM64:**
 
 [![](https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fmaven.pkg.github.com%2FNezuChan%2Fconnector-rs%2Forg%2Fnezu%2Fconnector-native-linux-aarch64%2Fmaven-metadata.xml&query=%2F%2Fmetadata%2Fversioning%2Flatest&label=linux-aarch64&logo=linux&logoColor=white&color=blue)](https://github.com/NezuChan/connector-rs/packages)
-[![](https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fmaven.pkg.github.com%2FNezuChan%2Fconnector-rs%2Forg%2Fnezu%2Fconnector-native-linux-arm%2Fmaven-metadata.xml&query=%2F%2Fmetadata%2Fversioning%2Flatest&label=linux-arm&logo=linux&logoColor=white&color=blue)](https://github.com/NezuChan/connector-rs/packages)
 
 **Windows x86_64:**
 
@@ -54,7 +53,6 @@ repositories {
 dependencies {
     implementation("org.nezu:connector-native-linux-x86-64:VERSION")
     implementation("org.nezu:connector-native-linux-aarch64:VERSION")
-    implementation("org.nezu:connector-native-linux-arm:VERSION")
     implementation("org.nezu:connector-native-win-x86-64:VERSION")
     implementation("org.nezu:connector-native-darwin:VERSION")
 }
