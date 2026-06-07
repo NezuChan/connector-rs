@@ -1,3 +1,6 @@
+[![build](https://github.com/NezuChan/connector-rs/actions/workflows/build.yml/badge.svg)](https://github.com/NezuChan/connector-rs/actions/workflows/build.yml)
+[![publish](https://github.com/NezuChan/connector-rs/actions/workflows/publish.yml/badge.svg)](https://github.com/NezuChan/connector-rs/actions/workflows/publish.yml)
+
 # connector-rs
 
 High-performance native audio codec implementations for Lavaplayer, written in Rust with JNI bindings.
@@ -13,6 +16,42 @@ This project provides native implementations of audio codecs (AAC, MP3, Opus, Vo
 - **Opus Codec**: Full encoder and decoder support
 - **Vorbis Decoder**: Ogg Vorbis decoding support
 - **Sample Rate Conversion**: Using libsamplerate
+
+## Installation
+
+Supported native platforms:
+
+**Linux x86_64:**
+
+[![](https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fmaven.pkg.github.com%2FNezuChan%2Fconnector-rs%2Forg%2Fnezu%2Fconnector-native-linux-x86-64%2Fmaven-metadata.xml&query=%2F%2Fmetadata%2Fversioning%2Flatest&label=linux-x86-64&logo=linux&logoColor=white&color=blue)](https://github.com/NezuChan/connector-rs/packages)
+
+**Windows x86_64:**
+
+[![](https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fmaven.pkg.github.com%2FNezuChan%2Fconnector-rs%2Forg%2Fnezu%2Fconnector-native-win-x86-64%2Fmaven-metadata.xml&query=%2F%2Fmetadata%2Fversioning%2Flatest&label=win-x86-64&logo=windows&logoColor=white&color=blue)](https://github.com/NezuChan/connector-rs/packages)
+
+**macOS Universal (x86_64 + aarch64):**
+
+[![](https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fmaven.pkg.github.com%2FNezuChan%2Fconnector-rs%2Forg%2Fnezu%2Fconnector-native-darwin%2Fmaven-metadata.xml&query=%2F%2Fmetadata%2Fversioning%2Flatest&label=darwin&logo=apple&logoColor=white&color=blue)](https://github.com/NezuChan/connector-rs/packages)
+
+### Gradle Example
+
+```gradle
+repositories {
+    maven {
+        url = uri("https://maven.pkg.github.com/NezuChan/connector-rs")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+            password = project.findProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
+}
+
+dependencies {
+    implementation("org.nezu:connector-native-linux-x86-64:VERSION")
+    implementation("org.nezu:connector-native-win-x86-64:VERSION")
+    implementation("org.nezu:connector-native-darwin:VERSION")
+}
+```
 
 ## Building
 
