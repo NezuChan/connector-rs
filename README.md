@@ -76,9 +76,9 @@ dependencies {
 
 The project supports multiple target platforms:
 
-- **Darwin**: x86_64, aarch64 (Apple Silicon)
-- **Linux**: x86, x86_64, ARM variants, musl
-- **Windows**: x86, x86_64 (MSVC)
+- **Linux**: x86_64 (glibc), aarch64 (ARM 64-bit)
+- **Windows**: x86_64, aarch64 (ARM 64-bit)
+- **macOS**: Universal binary (x86_64 + aarch64)
 
 ### Build Commands
 
