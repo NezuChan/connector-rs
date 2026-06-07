@@ -71,7 +71,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y cmake
+          sudo apt-get install -y cmake libmpg123-dev libvorbis-dev
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -80,7 +80,9 @@ jobs:
       
       - name: Install linker dependencies
         if: ${{ matrix.deps != '' }}
-        run: sudo ${{ matrix.deps }}
+        run: |
+          sudo ${{ matrix.deps }}
+          sudo apt-get install -y libmpg123-dev:arm64 libvorbis-dev:arm64
       
       - name: Build and Publish
         run: ./gradlew publish -Ptarget=${{ matrix.target }}
@@ -111,6 +113,11 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       
+      - name: Install mpg123 via vcpkg
+        run: |
+          vcpkg install mpg123:x64-windows
+          echo "VCPKGRS_DYNAMIC=1" >> $ENV:GITHUB_ENV
+      
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -140,9 +147,10 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install CMake
+      - name: Install dependencies
         run: |
           brew upgrade cmake || brew install cmake
+          brew install mpg123 libogg libvorbis
           cmake --version
 
       - name: Compile natives
