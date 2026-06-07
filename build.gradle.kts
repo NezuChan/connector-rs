@@ -8,7 +8,20 @@ plugins {
 }
 
 group = "org.nezu"
-version = "1.0.0"
+version = "1.0.0" + getGitHash()
+
+fun getGitHash(): String {
+    return try {
+        val stdout = ByteArrayOutputStream()
+        exec {
+            commandLine("git", "rev-parse", "--short", "HEAD")
+            standardOutput = stdout
+        }
+        "-" + stdout.toString().trim()
+    } catch (e: Exception) {
+        ""
+    }
+}
 
 repositories {
     mavenCentral()
