@@ -58,27 +58,20 @@ jobs:
             deps: apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
     name: Publish ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       contents: read
       packages: write
-    container:
-      image: ubuntu:22.04
     steps:
-      - name: Install Git
-        run: |
-          apt-get update -y
-          apt-get install -y git
-      
       - name: Checkout sources
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
       
-      - name: Install Essentials
+      - name: Install dependencies
         run: |
-          apt-get upgrade -y
-          apt-get install -y curl gcc g++ cmake openjdk-17-jdk-headless
+          sudo apt-get update -y
+          sudo apt-get install -y cmake
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -87,7 +80,7 @@ jobs:
       
       - name: Install linker dependencies
         if: ${{ matrix.deps != '' }}
-        run: ${{ matrix.deps }}
+        run: sudo ${{ matrix.deps }}
       
       - name: Build and Publish
         run: ./gradlew publish -Ptarget=${{ matrix.target }}
