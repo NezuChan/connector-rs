@@ -81,6 +81,12 @@ jobs:
       - name: Install Rust toolchain
         run: rustup target add x86_64-unknown-linux-musl ${{ matrix.target }}
       
+      - name: Install musl cross-compiler
+        run: |
+          apt-get install -y musl-dev
+          ln -s /usr/bin/g++ /usr/bin/x86_64-linux-musl-g++ || true
+          ln -s /usr/bin/gcc /usr/bin/x86_64-linux-musl-gcc || true
+      
       - name: Build and Publish
         env:
           RUSTFLAGS: "-C target-feature=-crt-static -C link-args=-static-libgcc"
