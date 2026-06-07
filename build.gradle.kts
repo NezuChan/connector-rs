@@ -9,18 +9,45 @@ plugins {
 }
 
 group = "org.nezu"
-version = getGitHash()
+version = getVersion()
 
-fun getGitHash(): String {
+fun getVersion(): String {
     return try {
-        val stdout = ByteArrayOutputStream()
-        exec {
-            commandLine("git", "rev-parse", "--short", "HEAD")
-            standardOutput = stdout
+        // Check if current commit has a release tag
+        val tagOutput = ByteArrayOutputStream()
+        val tagResult = exec {
+            commandLine("git", "describe", "--exact-match", "--tags", "HEAD")
+            standardOutput = tagOutput
+            isIgnoreExitValue = true
         }
-        stdout.toString().trim()
+        
+        if (tagResult.exitValue == 0) {
+            // This is a release, use the tag as version
+            val tag = tagOutput.toString().trim()
+            // Remove 'v' prefix if present (e.g., v1.0.0 -> 1.0.0)
+            if (tag.startsWith("v")) tag.substring(1) else tag
+        } else {
+            // Not a release, use git hash only
+            val hashOutput = ByteArrayOutputStream()
+            exec {
+                commandLine("git", "rev-parse", "--short", "HEAD")
+                standardOutput = hashOutput
+            }
+            hashOutput.toString().trim()
+        }
     } catch (e: Exception) {
-        "1.0.0"
+        // Fallback: try to get hash
+        try {
+            val hashOutput = ByteArrayOutputStream()
+            exec {
+                commandLine("git", "rev-parse", "--short", "HEAD")
+                standardOutput = hashOutput
+                isIgnoreExitValue = true
+            }
+            hashOutput.toString().trim().ifEmpty { "0.0.0-unknown" }
+        } catch (ex: Exception) {
+            "0.0.0-unknown"
+        }
     }
 }
 
