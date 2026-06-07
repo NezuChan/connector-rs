@@ -1,4 +1,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.nezu.connector.gradle.getPlatform
+import org.nezu.connector.gradle.targetPlatform
 
 plugins {
     kotlin("jvm")
@@ -17,16 +19,39 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-Toolchains.ALL.forEach { toolchain ->
-    tasks.register<Exec>("compileRust${toolchain.name}") {
-        commandLine = listOf("cargo", "build", "--release", "--target", toolchain.rustTarget)
+val platform = getPlatform()
 
-        doLast {
-            copy {
-                from("target/${toolchain.rustTarget}/release/${toolchain.prefix}connector.${toolchain.extension}")
-                into("src/main/resources/${toolchain.destFolder}")
-            }
-        }
+val cargoBuild by tasks.registering(Exec::class) {
+    commandLine("cargo", "build", "--release", "--target", targetPlatform)
+}
+
+val moveResources by tasks.registering(Copy::class) {
+    group = "build"
+    dependsOn(cargoBuild)
+
+    from("target/$targetPlatform/release/")
+
+    include {
+        it.name == "release" || it.name.endsWith(".so") || it.name.endsWith(".dll") || it.name.endsWith(".dylib")
+    }
+
+    into("src/main/resources/natives/$platform")
+}
+
+val cleanNatives by tasks.registering(Delete::class) {
+    group = "build"
+    delete(fileTree("src/main/resources/natives"))
+}
+
+tasks.named("clean").configure {
+    dependsOn(cleanNatives)
+}
+
+tasks.processResources {
+    dependsOn(moveResources)
+
+    include {
+        it.isDirectory || it.file.parentFile.name == platform
     }
 }
 
@@ -36,15 +61,15 @@ tasks.withType<KotlinCompile> {
 
 publishing {
     publications {
-        create<MavenPublication>("maven") {
+        create<MavenPublication>("Release") {
             groupId = "org.nezu"
-            artifactId = "connector"
+            artifactId = "connector-native-$platform"
             version = project.version.toString()
 
             from(components["java"])
 
             pom {
-                name.set("connector-rs")
+                name.set("connector-native-$platform")
                 description.set("High-performance native audio codec implementations for Lavaplayer, written in Rust with JNI bindings")
                 url.set("https://github.com/NezuChan/connector-rs")
 

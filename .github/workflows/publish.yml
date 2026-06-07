@@ -1,0 +1,155 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: "publish"
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+          - target: i686-unknown-linux-gnu
+            deps: apt-get install -y gcc-multilib
+          - target: aarch64-unknown-linux-gnu
+            deps: apt-get install -y gcc-aarch64-linux-gnu
+          - target: armv7-unknown-linux-gnueabihf
+            deps: apt-get install -y gcc-arm-linux-gnueabihf
+
+    name: Publish ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    container:
+      image: ubuntu:22.04
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      
+      - name: Install Essentials
+        run: |
+          apt-get update -y
+          apt-get upgrade -y
+          apt-get install -y curl gcc openjdk-17-jdk-headless
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      
+      - name: Install linker dependencies
+        if: ${{ matrix.deps != '' }}
+        run: ${{ matrix.deps }}
+      
+      - name: Build and Publish
+        run: ./gradlew publish -Ptarget=${{ matrix.target }}
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  linux-musl:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            arch: x86_64
+          - target: aarch64-unknown-linux-musl
+            arch: aarch64
+
+    name: Publish ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    container:
+      image: clux/muslrust:stable
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      
+      - name: Install Essentials
+        run: |
+          apt-get update -y
+          apt-get upgrade -y
+          apt-get install -y gcc musl-tools curl openjdk-17-jdk-headless
+      
+      - name: Install Rust toolchain
+        run: rustup target add x86_64-unknown-linux-musl ${{ matrix.target }}
+      
+      - name: Build and Publish
+        env:
+          RUSTFLAGS: "-C target-feature=-crt-static -C link-args=-static-libgcc"
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew publish -Ptarget=${{ matrix.target }}
+
+  windows:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+          - target: i686-pc-windows-msvc
+
+    name: Publish ${{ matrix.target }}
+    runs-on: windows-2022
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+      
+      - name: Build and Publish
+        run: ./gradlew publish -Ptarget=${{ matrix.target }}
+        env:
+          GITHUB_ACTOR: ${{ env.GITHUB_ACTOR }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  macos:
+    name: Publish macOS universal binary
+    runs-on: macos-14
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Compile natives
+        run: |
+          rustup target add x86_64-apple-darwin
+          cargo build --release --target=x86_64-apple-darwin
+          rustup target add aarch64-apple-darwin
+          cargo build --release --target=aarch64-apple-darwin
+
+      - name: Create target directory for darwin
+        run: mkdir -p target/darwin/release
+
+      - name: Combine to universal dylib
+        run: lipo -create -output target/darwin/release/libconnector.dylib target/**/release/*.dylib
+
+      - name: Build and Publish
+        run: ./gradlew publish -Ptarget=darwin -x cargoBuild
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
