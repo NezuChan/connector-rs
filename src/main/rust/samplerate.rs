@@ -1,8 +1,8 @@
 use std::os::raw::c_long;
 use jni::JNIEnv;
-use jni::objects::{JClass, ReleaseMode};
+use jni::objects::JClass;
 use jni::sys::{jboolean, jdouble, jfloatArray, jint, jintArray, jlong};
-use libsamplerate_sys::*;
+use libsamplerate::*;
 use log::debug;
 
 #[no_mangle]
@@ -47,7 +47,7 @@ pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_samp
 
 #[no_mangle]
 pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_samplerate_SampleRateLibrary_process(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _: JClass,
     instance: jlong,
     input_array: jfloatArray,
@@ -71,44 +71,47 @@ pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_samp
         eof,
     );
 
-    /* input */
-    let in_auto_ptr = env
-        .get_float_array_elements(input_array, ReleaseMode::CopyBack)
-        .expect("Unable to get input array.");
+    env.with_env(|env| -> jni::errors::Result<jint> {
+        let jni_env = env.get_raw();
 
-    let in_ptr = in_auto_ptr.as_ptr();
-    let in_size = in_auto_ptr.size().unwrap() as usize;
-    let input = Vec::from_raw_parts(in_ptr as *mut f32, in_size, in_size);
+        // Get input array elements using raw JNI
+        let in_ptr = ((**jni_env).v1_1.GetFloatArrayElements)(jni_env, input_array, std::ptr::null_mut());
+        if in_ptr.is_null() {
+            return Ok(-1);
+        }
+        let in_size = ((**jni_env).v1_1.GetArrayLength)(jni_env, input_array) as usize;
+        let input = std::slice::from_raw_parts(in_ptr, in_size);
 
-    /* output */
-    let out_auto_ptr = env
-        .get_float_array_elements(output_array, ReleaseMode::CopyBack)
-        .expect("Unable to get output array.");
+        // Get output array elements using raw JNI
+        let out_ptr = ((**jni_env).v1_1.GetFloatArrayElements)(jni_env, output_array, std::ptr::null_mut());
+        if out_ptr.is_null() {
+            ((**jni_env).v1_1.ReleaseFloatArrayElements)(jni_env, input_array, in_ptr, 0);
+            return Ok(-1);
+        }
+        let out_size = ((**jni_env).v1_1.GetArrayLength)(jni_env, output_array) as usize;
+        let output = std::slice::from_raw_parts_mut(out_ptr, out_size);
 
-    let out_ptr = out_auto_ptr.as_ptr();
-    let out_size = out_auto_ptr.size().unwrap() as usize;
-    let mut output = Vec::from_raw_parts(out_ptr as *mut f32, out_size, out_size);
+        let mut src_data = SRC_DATA {
+            data_in: input[input_offset as usize..].as_ptr(),
+            input_frames: input_length as c_long,
+            input_frames_used: 0,
+            end_of_input: eof as i32,
+            data_out: output[output_offset as usize..].as_mut_ptr(),
+            output_frames: output_length as c_long,
+            output_frames_gen: 0,
+            src_ratio: source_ratio,
+        };
 
-    let mut src_data = SRC_DATA {
-        data_in: input[input_offset as usize..].as_ptr(),
-        input_frames: input_length as c_long,
-        input_frames_used: 0,
-        end_of_input: eof as i32,
-        data_out: output[output_offset as usize..].as_mut_ptr(),
-        output_frames: output_length as c_long,
-        output_frames_gen: 0,
-        src_ratio: source_ratio,
-    };
+        let result = src_process(instance as *mut SRC_STATE, &mut src_data);
+        let prog = [src_data.input_frames_used as jint, src_data.output_frames_gen as jint];
 
-    let result = src_process(instance as *mut SRC_STATE, &mut src_data);
-    let prog = [src_data.input_frames_used as jint, src_data.output_frames_gen as jint];
+        // Write progress using raw JNI
+        ((**jni_env).v1_1.SetIntArrayRegion)(jni_env, progress, 0, 2, prog.as_ptr());
 
-    env
-        .set_int_array_region(progress, 0, &prog)
-        .expect("Unable to write to progress array.");
+        // Release arrays
+        ((**jni_env).v1_1.ReleaseFloatArrayElements)(jni_env, input_array, in_ptr, 0);
+        ((**jni_env).v1_1.ReleaseFloatArrayElements)(jni_env, output_array, out_ptr, 0);
 
-    std::mem::forget(input);
-    std::mem::forget(output);
-
-    result
+        Ok(result)
+    }).resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
