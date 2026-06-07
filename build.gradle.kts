@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.nezu.connector.gradle.getPlatform
 import org.nezu.connector.gradle.targetPlatform
+import java.io.ByteArrayOutputStream
 
 plugins {
     kotlin("jvm")
