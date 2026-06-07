@@ -12,8 +12,6 @@ jobs:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
-          - target: aarch64-unknown-linux-gnu
-            deps: apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
     name: Build ${{ matrix.target }}
     runs-on: ubuntu-latest
@@ -39,41 +37,6 @@ jobs:
         run: ${{ matrix.deps }}
       
       - name: Run Gradle Build
-        run: ./gradlew build -Ptarget=${{ matrix.target }}
-
-  linux-musl:
-    strategy:
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-musl
-            arch: x86_64
-
-    name: Build ${{ matrix.target }}
-    runs-on: ubuntu-latest
-    container:
-      image: clux/muslrust:stable
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-      
-      - name: Install Essentials
-        run: |
-          apt-get update -y
-          apt-get upgrade -y
-          apt-get install -y gcc g++ musl-tools cmake curl openjdk-17-jdk-headless
-      
-      - name: Install Rust toolchain
-        run: rustup target add x86_64-unknown-linux-musl
-      
-      - name: Install musl cross-compiler
-        run: |
-          apt-get install -y musl-dev
-          ln -s /usr/bin/g++ /usr/bin/x86_64-linux-musl-g++ || true
-          ln -s /usr/bin/gcc /usr/bin/x86_64-linux-musl-gcc || true
-      
-      - name: Run Gradle Build
-        env:
-          RUSTFLAGS: "-C target-feature=-crt-static -C link-args=-static-libgcc"
         run: ./gradlew build -Ptarget=${{ matrix.target }}
 
   windows:
@@ -102,34 +65,3 @@ jobs:
       
       - name: Run Gradle Build
         run: ./gradlew build -Ptarget=${{ matrix.target }}
-
-  macos:
-    name: Build macOS universal binary
-    runs-on: macos-14
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install CMake
-        run: |
-          brew upgrade cmake || brew install cmake
-          cmake --version
-
-      - name: Compile natives
-        run: |
-          rustup target add x86_64-apple-darwin
-          cargo build --release --target=x86_64-apple-darwin
-          rustup target add aarch64-apple-darwin
-          cargo build --release --target=aarch64-apple-darwin
-
-      - name: Create target directory for darwin
-        run: mkdir -p target/darwin/release
-
-      - name: Combine to universal dylib
-        run: lipo -create -output target/darwin/release/libconnector.dylib target/**/release/*.dylib
-
-      - name: Run Gradle Build
-        run: ./gradlew build -Ptarget=darwin -x cargoBuild
