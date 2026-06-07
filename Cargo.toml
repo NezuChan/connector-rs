@@ -26,7 +26,7 @@ vorbis-sys = { version = "0.1.1", optional = true }
 libsamplerate-sys = { version = "0.1.9", optional = true }
 
 [features]
-default = ["opus", "aac", "mp3"]
+default = ["opus", "aac", "mp3", "vorbis"]
 opus = ["audiopus_sys"]
 mp3 = ["mpg123-sys"]
 aac = ["fdk-aac-sys"]

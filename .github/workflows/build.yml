@@ -17,7 +17,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y cmake libmpg123-dev
+          sudo apt-get install -y cmake libmpg123-dev libvorbis-dev
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -44,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y cmake libmpg123-dev
+          sudo apt-get install -y cmake libmpg123-dev libvorbis-dev
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -74,7 +74,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew upgrade cmake || brew install cmake
-          brew install mpg123
+          brew install mpg123 libogg libvorbis
           cmake --version
 
       - name: Compile natives
@@ -101,7 +101,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew upgrade cmake || brew install cmake
-          brew install mpg123
+          brew install mpg123 libogg libvorbis
           cmake --version
 
       - name: Compile natives

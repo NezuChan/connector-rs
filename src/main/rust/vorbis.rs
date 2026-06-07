@@ -1,7 +1,7 @@
 use std::mem::MaybeUninit;
 use std::os::raw::c_long;
 use jni::JNIEnv;
-use jni::objects::{JByteBuffer, JClass, JObject};
+use jni::objects::{JByteBuffer, JClass};
 use jni::sys::{jint, jlong, jobjectArray};
 use log::debug;
 use ogg_sys::ogg_packet;
@@ -195,17 +195,26 @@ pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_vorb
         let chunk = if available > buffer_length { buffer_length } else { available };
         if chunk > 0 {
             for i in 0..state.get_channel_count() {
-                if let Ok(element_obj) = env.get_object_array_element(channels.into(), i as usize) {
-                    let pcm = buffers.pcm(i as usize, chunk);
-                    let element: JObject = element_obj;
-                    
-                    let _ = env.set_float_array_region(element.into_raw(), 0, pcm);
+                let pcm = buffers.pcm(i as usize, chunk);
+                
+                // Use raw JNI to get and set float array
+                let jni_env = env.get_raw();
+                let element = unsafe { 
+                    ((**jni_env).v1_1.GetObjectArrayElement)(jni_env, channels, i as i32) 
+                };
+                if element.is_null() {
+                    return Ok(-1);
                 }
-            }
-
-            if env.exception_check()? {
-                env.exception_clear()?;
-                return Ok(-1);
+                
+                unsafe {
+                    ((**jni_env).v1_1.SetFloatArrayRegion)(
+                        jni_env,
+                        element as jni::sys::jfloatArray,
+                        0,
+                        pcm.len() as i32,
+                        pcm.as_ptr()
+                    );
+                }
             }
 
             vorbis_synthesis_read(state.dsp_state.as_mut_ptr(), chunk as i32);
@@ -230,5 +239,6 @@ pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_vorb
     }
 
     vorbis_info_clear(state.info_ptr);
-    std::mem::drop(instance as VorbisStateHandle);
+    // Properly deallocate VorbisState
+    drop(Box::from_raw(instance as VorbisStateHandle));
 }
