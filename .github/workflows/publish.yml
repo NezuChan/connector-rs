@@ -65,6 +65,11 @@ jobs:
     container:
       image: ubuntu:22.04
     steps:
+      - name: Install Git
+        run: |
+          apt-get update -y
+          apt-get install -y git
+      
       - name: Checkout sources
         uses: actions/checkout@v4
         with:
@@ -72,9 +77,8 @@ jobs:
       
       - name: Install Essentials
         run: |
-          apt-get update -y
           apt-get upgrade -y
-          apt-get install -y curl gcc g++ cmake openjdk-17-jdk-headless git
+          apt-get install -y curl gcc g++ cmake openjdk-17-jdk-headless
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
