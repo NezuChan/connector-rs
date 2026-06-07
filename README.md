@@ -33,10 +33,6 @@ Supported native platforms:
 
 [![](https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fmaven.pkg.github.com%2FNezuChan%2Fconnector-rs%2Forg%2Fnezu%2Fconnector-native-win-x86-64%2Fmaven-metadata.xml&query=%2F%2Fmetadata%2Fversioning%2Flatest&label=win-x86-64&logo=windows&logoColor=white&color=blue)](https://github.com/NezuChan/connector-rs/packages)
 
-**Windows ARM64:**
-
-[![](https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fmaven.pkg.github.com%2FNezuChan%2Fconnector-rs%2Forg%2Fnezu%2Fconnector-native-win-aarch64%2Fmaven-metadata.xml&query=%2F%2Fmetadata%2Fversioning%2Flatest&label=win-aarch64&logo=windows&logoColor=white&color=blue)](https://github.com/NezuChan/connector-rs/packages)
-
 **macOS Universal (x86_64 + aarch64):**
 
 [![](https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fmaven.pkg.github.com%2FNezuChan%2Fconnector-rs%2Forg%2Fnezu%2Fconnector-native-darwin%2Fmaven-metadata.xml&query=%2F%2Fmetadata%2Fversioning%2Flatest&label=darwin&logo=apple&logoColor=white&color=blue)](https://github.com/NezuChan/connector-rs/packages)
@@ -58,7 +54,6 @@ dependencies {
     implementation("org.nezu:connector-native-linux-x86-64:VERSION")
     implementation("org.nezu:connector-native-linux-aarch64:VERSION")
     implementation("org.nezu:connector-native-win-x86-64:VERSION")
-    implementation("org.nezu:connector-native-win-aarch64:VERSION")
     implementation("org.nezu:connector-native-darwin:VERSION")
 }
 ```
@@ -77,7 +72,7 @@ dependencies {
 The project supports multiple target platforms:
 
 - **Linux**: x86_64 (glibc), aarch64 (ARM 64-bit)
-- **Windows**: x86_64, aarch64 (ARM 64-bit)
+- **Windows**: x86_64
 - **macOS**: Universal binary (x86_64 + aarch64)
 
 ### Build Commands
