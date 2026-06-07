@@ -135,6 +135,16 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Install CMake
+        run: brew install cmake
+
       - name: Compile natives
         run: |
           rustup target add x86_64-apple-darwin
