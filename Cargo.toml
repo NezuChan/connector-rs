@@ -1,0 +1,25 @@
+[package]
+name = "connector"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+path = "src/main/rust/lib.rs"
+
+[profile.release]
+strip = true
+lto = true
+panic = "abort"
+codegen-units = 1
+
+[dependencies]
+jni = "0.22.0"
+log = "0.4"
+
+fdk-aac-sys = "0.4.0"
+mpg123-sys = "0.6.0"
+ogg-sys = "0.0.9"
+audiopus_sys = "0.2.1"
+vorbis-sys = "0.1.1"
+libsamplerate-sys = "0.1.9"

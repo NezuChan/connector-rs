@@ -1,0 +1,26 @@
+# Rust
+/target/
+Cargo.lock
+**/*.rs.bk
+
+# Gradle
+.gradle/
+build/
+out/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# macOS
+.DS_Store
+
+# Native libraries
+src/main/resources/natives/
