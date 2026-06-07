@@ -137,10 +137,8 @@ jobs:
           cache: 'gradle'
       
       - name: Build and Publish
-        run: ./gradlew publish -Ptarget=${{ matrix.target }}
+        run: ./gradlew publish -Ptarget=${{ matrix.target }} -Pfeatures=opus,aac
         env:
-          MPG123_NO_PKG_CONFIG: "1"
-          VORBIS_NO_PKG_CONFIG: "1"
           GITHUB_ACTOR: ${{ env.GITHUB_ACTOR }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

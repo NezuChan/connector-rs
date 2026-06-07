@@ -62,8 +62,16 @@ java {
 
 val platform = getPlatform()
 
+val cargoFeatures = project.findProperty("features")?.toString() ?: "default"
+
 val cargoBuild by tasks.registering(Exec::class) {
-    commandLine("cargo", "build", "--release", "--target", targetPlatform)
+    val args = mutableListOf("cargo", "build", "--release", "--target", targetPlatform)
+    if (cargoFeatures != "default") {
+        args.add("--no-default-features")
+        args.add("--features")
+        args.add(cargoFeatures)
+    }
+    commandLine(args)
 }
 
 val moveResources by tasks.registering(Copy::class) {

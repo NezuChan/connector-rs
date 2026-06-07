@@ -86,10 +86,7 @@ jobs:
           cache: 'gradle'
       
       - name: Run Gradle Build
-        run: ./gradlew build -Ptarget=${{ matrix.target }}
-        env:
-          MPG123_NO_PKG_CONFIG: "1"
-          VORBIS_NO_PKG_CONFIG: "1"
+        run: ./gradlew build -Ptarget=${{ matrix.target }} -Pfeatures=opus,aac
 
   macos-x86_64:
     name: Build macOS x86_64
