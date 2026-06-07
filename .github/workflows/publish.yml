@@ -56,14 +56,6 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
       
-      - name: Wait for Windows ARM64 build
-        uses: lewagon/wait-on-check-action@v1.3.4
-        with:
-          ref: ${{ github.sha }}
-          check-name: 'Build aarch64-pc-windows-msvc'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
-      
       - name: Wait for macOS build
         uses: lewagon/wait-on-check-action@v1.3.4
         with:
@@ -123,7 +115,6 @@ jobs:
       matrix:
         include:
           - target: x86_64-pc-windows-msvc
-          - target: aarch64-pc-windows-msvc
 
     name: Publish ${{ matrix.target }}
     runs-on: windows-2022
