@@ -40,24 +40,17 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
       
-      - name: Wait for macOS build
+       - name: Wait for macOS universal build
         uses: lewagon/wait-on-check-action@v1.3.4
         with:
           ref: ${{ github.sha }}
-          check-name: 'Build macOS universal binary'
+          check-name: 'Combine macOS universal binary'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
 
-  linux:
+  linux-x86_64:
     needs: wait-for-build
-    strategy:
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
-          - target: aarch64-unknown-linux-gnu
-            deps: apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-
-    name: Publish ${{ matrix.target }}
+    name: Publish x86_64-unknown-linux-gnu
     runs-on: ubuntu-22.04
     permissions:
       contents: read
@@ -76,18 +69,39 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
-      
-      - name: Install linker dependencies
-        if: ${{ matrix.deps != '' }}
-        run: |
-          sudo dpkg --add-architecture arm64
-          sudo apt-get update -y --fix-missing || true
-          sudo ${{ matrix.deps }}
-          sudo apt-get install -y --fix-missing libmpg123-dev:arm64 libvorbis-dev:arm64 || sudo apt-get install -y libmpg123-dev libvorbis-dev
+          targets: x86_64-unknown-linux-gnu
       
       - name: Build and Publish
-        run: ./gradlew publish -Ptarget=${{ matrix.target }}
+        run: ./gradlew publish -Ptarget=x86_64-unknown-linux-gnu
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  linux-aarch64:
+    needs: wait-for-build
+    name: Publish aarch64-unknown-linux-gnu
+    runs-on: blacksmith-4vcpu-ubuntu-2404-arm
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y cmake libmpg123-dev libvorbis-dev
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-unknown-linux-gnu
+      
+      - name: Build and Publish
+        run: ./gradlew publish -Ptarget=aarch64-unknown-linux-gnu
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

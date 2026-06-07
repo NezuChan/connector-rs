@@ -7,15 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  linux:
-    strategy:
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
-          - target: aarch64-unknown-linux-gnu
-            deps: apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-
-    name: Build ${{ matrix.target }}
+  linux-x86_64:
+    name: Build x86_64-unknown-linux-gnu
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout sources
@@ -29,18 +22,44 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: x86_64-unknown-linux-gnu
       
-      - name: Install linker dependencies
-        if: ${{ matrix.deps != '' }}
-        run: |
-          sudo dpkg --add-architecture arm64
-          sudo apt-get update -y --fix-missing || true
-          sudo ${{ matrix.deps }}
-          sudo apt-get install -y --fix-missing libmpg123-dev:arm64 libvorbis-dev:arm64 || sudo apt-get install -y libmpg123-dev libvorbis-dev
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
       
       - name: Run Gradle Build
-        run: ./gradlew build -Ptarget=${{ matrix.target }}
+        run: ./gradlew build -Ptarget=x86_64-unknown-linux-gnu
+
+  linux-aarch64:
+    name: Build aarch64-unknown-linux-gnu
+    runs-on: blacksmith-4vcpu-ubuntu-2404-arm
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y cmake libmpg123-dev libvorbis-dev
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-unknown-linux-gnu
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+      
+      - name: Run Gradle Build
+        run: ./gradlew build -Ptarget=aarch64-unknown-linux-gnu
 
   windows:
     strategy:
