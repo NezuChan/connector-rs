@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "org.nezu"
-version = "1.0.0" + getGitHash()
+version = getGitHash()
 
 fun getGitHash(): String {
     return try {
@@ -17,9 +17,9 @@ fun getGitHash(): String {
             commandLine("git", "rev-parse", "--short", "HEAD")
             standardOutput = stdout
         }
-        "-" + stdout.toString().trim()
+        stdout.toString().trim()
     } catch (e: Exception) {
-        ""
+        "1.0.0"
     }
 }
 
