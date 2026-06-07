@@ -1,50 +1,34 @@
-// A JNI call that does not check for exceptions or verify
-// error codes (if any).
+#[allow(unused_macros)]
 macro_rules! jni_unchecked {
-    ( $jnienv:expr, $name:tt $(, $args:expr )* ) => ({
-        unsafe {
-            jni_method!($jnienv, $name)($jnienv, $($args),*)
-        }
-    })
+    ($jni:expr) => {
+        jni::JNIEnv::from_raw($jni).unwrap()
+    };
 }
 
+#[allow(unused_macros)]
 macro_rules! jni_method {
-    ( $jnienv:expr, $name:tt ) => {{
-        let env = $jnienv;
-        match deref!(deref!(env, "JNIEnv"), "*JNIEnv").$name {
-            Some(method) => {
-                method
-            }
-            None => {
-                return Err(jni::errors::Error::JNIEnvMethodNotFound(stringify!(
-                    $name
-                )));
-            }
-        }
-    }};
-}
-
-macro_rules! deref {
-    ( $obj:expr, $ctx:expr ) => {
-        if $obj.is_null() {
-            return Err(jni::errors::Error::NullDeref($ctx));
-        } else {
-            #[allow(unused_unsafe)]
-            unsafe {
-                *$obj
-            }
-        }
+    ($jni:expr, $class:expr, $name:expr, $sig:expr) => {
+        jni_unchecked!($jni)
+            .get_method_id($class, $name, $sig)
+            .unwrap()
     };
 }
 
 macro_rules! to_ptr {
     ($obj:expr) => {
-        Box::into_raw(Box::new($obj))
+        Box::into_raw(Box::new($obj)) as jlong
+    };
+}
+
+#[allow(unused_macros)]
+macro_rules! deref {
+    ($handle:expr) => {
+        unsafe { Box::from_raw($handle as *mut _) }
     };
 }
 
 macro_rules! from_ptr {
-    ($ptr:expr) => {
-        unsafe { &mut *$ptr }
+    ($handle:expr) => {
+        unsafe { &mut *($handle) }
     };
 }

@@ -4,7 +4,6 @@ use jni::objects::{JByteBuffer, JClass};
 use jni::sys::{jboolean, jint, jlong};
 use log::debug;
 
-use crate::util::get_direct_short_buffer_address;
 
 #[no_mangle]
 pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_aac_AacDecoderLibrary_create(
@@ -52,7 +51,7 @@ pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_aac_
 ) -> jint {
     debug!("(aac) fill, decoder: {}, buffer_offset: {}, buffer_length: {}", decoder_handle, buffer_offset, buffer_length);
 
-    jni.with_env(|mut env| -> jni::errors::Result<jint> {
+    jni.with_env(|env| -> jni::errors::Result<jint> {
         let mut input_ptr = env.get_direct_buffer_address(&buffer)?;
 
         let length = buffer_length as u32;
@@ -84,7 +83,7 @@ pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_aac_
 ) -> jint {
     debug!("(aac) decode, decoder_handle: {}, buffer_length: {}, flush: {}", decoder_handle, buffer_length, flush);
 
-    jni.with_env(|mut env| -> jni::errors::Result<jint> {
+    jni.with_env(|env| -> jni::errors::Result<jint> {
         let output_ptr = env.get_direct_buffer_address(&buffer)?;
         let output_capacity = env.get_direct_buffer_capacity(&buffer)?;
         let output = std::slice::from_raw_parts_mut(output_ptr as *mut i16, (output_capacity / 2) as usize);

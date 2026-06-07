@@ -4,7 +4,6 @@ use jni::objects::{JByteBuffer, JClass};
 use jni::sys::{jint, jlong};
 use log::debug;
 
-use crate::util::get_direct_short_buffer_address;
 
 type OpusDecoderHandle = *mut OpusDecoder;
 type OpusEncoderHandle = *mut OpusEncoder;
@@ -61,7 +60,7 @@ pub extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_opus_OpusDe
 
     let decoder = from_ptr!(decoder_ptr as OpusDecoderHandle);
 
-    env.with_env(|mut env| -> jni::errors::Result<jint> {
+    env.with_env(|env| -> jni::errors::Result<jint> {
         let input_ptr = env.get_direct_buffer_address(&input_buffer)?;
         
         let output_ptr = env.get_direct_buffer_address(&output_buffer)?;
@@ -124,7 +123,7 @@ pub extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_opus_OpusEn
 
     let encoder = from_ptr!(encoder_ptr as OpusEncoderHandle);
 
-    jni.with_env(|mut env| -> jni::errors::Result<jint> {
+    jni.with_env(|env| -> jni::errors::Result<jint> {
         let input_ptr = env.get_direct_buffer_address(&input_buffer)?;
         let input_capacity = env.get_direct_buffer_capacity(&input_buffer)?;
         let input = unsafe { std::slice::from_raw_parts_mut(input_ptr as *mut i16, (input_capacity / 2) as usize) };

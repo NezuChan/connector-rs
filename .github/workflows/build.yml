@@ -11,13 +11,13 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: x86_64-unknown-linux-gnu
+           - target: x86_64-unknown-linux-gnu
           - target: i686-unknown-linux-gnu
-            deps: apt-get install -y gcc-multilib
+            deps: apt-get install -y gcc-multilib g++-multilib
           - target: aarch64-unknown-linux-gnu
-            deps: apt-get install -y gcc-aarch64-linux-gnu
+            deps: apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
           - target: armv7-unknown-linux-gnueabihf
-            deps: apt-get install -y gcc-arm-linux-gnueabihf
+            deps: apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 
     name: Build ${{ matrix.target }}
     runs-on: ubuntu-latest
@@ -76,6 +76,8 @@ jobs:
           apt-get install -y musl-dev
           ln -s /usr/bin/g++ /usr/bin/x86_64-linux-musl-g++ || true
           ln -s /usr/bin/gcc /usr/bin/x86_64-linux-musl-gcc || true
+          ln -s /usr/bin/g++ /usr/bin/aarch64-linux-musl-g++ || true
+          ln -s /usr/bin/gcc /usr/bin/aarch64-linux-musl-gcc || true
       
       - name: Run Gradle Build
         env:
