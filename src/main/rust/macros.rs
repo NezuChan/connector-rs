@@ -16,7 +16,7 @@ macro_rules! jni_method {
 
 macro_rules! to_ptr {
     ($obj:expr) => {
-        Box::into_raw(Box::new($obj)) as jlong
+        Box::into_raw(Box::new($obj))
     };
 }
 

@@ -1,8 +1,8 @@
 use std::mem::MaybeUninit;
 use std::os::raw::c_long;
 use jni::JNIEnv;
-use jni::objects::{JByteBuffer, JClass};
-use jni::sys::{jfloatArray, jint, jlong, jobjectArray};
+use jni::objects::{JByteBuffer, JClass, JObject};
+use jni::sys::{jint, jlong, jobjectArray};
 use log::debug;
 use ogg_sys::ogg_packet;
 use vorbis_sys::*;
@@ -57,24 +57,22 @@ impl VorbisState {
 }
 
 fn build_ogg_packet(
-    env: JNIEnv,
+    env: &mut jni::Env,
     ogg_packet: &mut ogg_packet,
-    buffer: JByteBuffer,
+    buffer: &JByteBuffer,
     offset: usize,
     length: i64,
     is_beginning: bool,
-)  {
-    let packet = env
-        .get_direct_buffer_address(buffer)
-        .expect("Unable to get packet");
+) -> jni::errors::Result<()> {
+    let packet = env.get_direct_buffer_address(buffer)?;
 
     ogg_packet.bytes = length as c_long;
     ogg_packet.b_o_s = if is_beginning { 1 } else { 0 };
-    ogg_packet.packet = packet[offset..].as_mut_ptr();
+    ogg_packet.packet = unsafe { packet.offset(offset as isize) };
     ogg_packet.packetno = 0;
     ogg_packet.granulepos = 0;
 
-    std::mem::forget(packet);
+    Ok(())
 }
 
 #[no_mangle]
@@ -89,7 +87,7 @@ pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_vorb
 
 #[no_mangle]
 pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_initialise(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _: JClass,
     instance: jlong,
     id_direct_buffer: JByteBuffer,
@@ -101,38 +99,40 @@ pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_vorb
 ) -> jint {
     debug!("(vorbis) initialise, instance: {}", instance);
 
-    let state = VorbisState::from_ptr(instance as VorbisStateHandle);
+    env.with_env(|env| -> jni::errors::Result<jint> {
+        let state = VorbisState::from_ptr(instance as VorbisStateHandle);
 
-    /* dummy comment instance, needs non-null vendor, otherwise headerin will reject setup (codebook) packet. */
-    let mut comment = std::mem::zeroed();
-    vorbis_comment_init(&mut comment);
-    comment.vendor = &mut 0;
+        /* dummy comment instance, needs non-null vendor, otherwise headerin will reject setup (codebook) packet. */
+        let mut comment = std::mem::zeroed();
+        vorbis_comment_init(&mut comment);
+        comment.vendor = &mut 0;
 
-    /* pass in identification header packet */
-    let mut packet: ogg_packet = std::mem::zeroed();
-    build_ogg_packet(env, &mut packet, id_direct_buffer, id_offset as usize, id_length as i64, true);
+        /* pass in identification header packet */
+        let mut packet: ogg_packet = std::mem::zeroed();
+        build_ogg_packet(env, &mut packet, &id_direct_buffer, id_offset as usize, id_length as i64, true)?;
 
-    let mut error = vorbis_synthesis_headerin(state.info_ptr, &mut comment, &mut packet);
-    if error != 0 {
-        return error | 0x01000000;
-    };
+        let mut error = vorbis_synthesis_headerin(state.info_ptr, &mut comment, &mut packet);
+        if error != 0 {
+            return Ok(error | 0x01000000);
+        }
 
-    build_ogg_packet(env, &mut packet, setup_direct_buffer, setup_offset as usize, setup_length as i64, false);
+        build_ogg_packet(env, &mut packet, &setup_direct_buffer, setup_offset as usize, setup_length as i64, false)?;
 
-    error = vorbis_synthesis_headerin(state.info_ptr, &mut comment, &mut packet);
-    if error != 0 {
-        return error | 0x01000000;
-    };
+        error = vorbis_synthesis_headerin(state.info_ptr, &mut comment, &mut packet);
+        if error != 0 {
+            return Ok(error | 0x01000000);
+        }
 
-    error = vorbis_synthesis_init(state.dsp_state.as_mut_ptr(), state.info_ptr);
-    if error != 0 {
-        return 0;
-    };
+        error = vorbis_synthesis_init(state.dsp_state.as_mut_ptr(), state.info_ptr);
+        if error != 0 {
+            return Ok(0);
+        }
 
-    vorbis_block_init(state.dsp_state.as_mut_ptr(), state.block.as_mut_ptr());
-    state.initialized = true;
+        vorbis_block_init(state.dsp_state.as_mut_ptr(), state.block.as_mut_ptr());
+        state.initialized = true;
 
-    1
+        Ok(1)
+    }).resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
 #[no_mangle]
@@ -149,7 +149,7 @@ pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_vorb
 
 #[no_mangle]
 pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_input(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _: JClass,
     instance: jlong,
     buffer: JByteBuffer,
@@ -158,24 +158,26 @@ pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_vorb
 ) -> jint {
     debug!("(vorbis) input, instance: {}, buffer_offset: {}, buffer_length: {}", instance, buffer_offset, buffer_length);
 
-    let state = VorbisState::from_ptr(instance as VorbisStateHandle);
+    env.with_env(|env| -> jni::errors::Result<jint> {
+        let state = VorbisState::from_ptr(instance as VorbisStateHandle);
 
-    /* build packet. */
-    let mut packet = std::mem::zeroed();
-    build_ogg_packet(env, &mut packet, buffer, buffer_offset as usize, buffer_length as i64, false);
+        /* build packet. */
+        let mut packet = std::mem::zeroed();
+        build_ogg_packet(env, &mut packet, &buffer, buffer_offset as usize, buffer_length as i64, false)?;
 
-    /* synthesize packet */
-    let error = vorbis_synthesis(state.block.as_mut_ptr(), &mut packet);
-    if error != 0 {
-        return error
-    }
+        /* synthesize packet */
+        let error = vorbis_synthesis(state.block.as_mut_ptr(), &mut packet);
+        if error != 0 {
+            return Ok(error);
+        }
 
-    vorbis_synthesis_blockin(state.dsp_state.as_mut_ptr(), state.block.as_mut_ptr())
+        Ok(vorbis_synthesis_blockin(state.dsp_state.as_mut_ptr(), state.block.as_mut_ptr()))
+    }).resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
 #[no_mangle]
 pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_output(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _: JClass,
     instance: jlong,
     channels: jobjectArray,
@@ -183,38 +185,34 @@ pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_vorb
 ) -> jint {
     debug!("(vorbis) output, instance: {}, length: {}", instance, length);
 
-    let state = VorbisState::from_ptr(instance as VorbisStateHandle);
-    let mut buffers = Pcm::new();
+    env.with_env(|env| -> jni::errors::Result<jint> {
+        let state = VorbisState::from_ptr(instance as VorbisStateHandle);
+        let mut buffers = Pcm::new();
 
-    let available = vorbis_synthesis_pcmout(state.dsp_state.as_mut_ptr(), &mut buffers.internal) as usize;
-    let buffer_length = length as usize;
+        let available = vorbis_synthesis_pcmout(state.dsp_state.as_mut_ptr(), &mut buffers.internal) as usize;
+        let buffer_length = length as usize;
 
-    let chunk = if available > buffer_length { buffer_length } else { available };
-    if chunk > 0 {
-        for i in 0..state.get_channel_count() {
-            if let Ok(element) = env
-                .get_object_array_element(channels, i)
-                .and_then(|e| Ok(e.into_inner() as jfloatArray))
-            {
-                let pcm = buffers.pcm(i as usize, chunk);
-
-                env
-                    .set_float_array_region(element, 0, pcm)
-                    .expect("Unable to write to buffers.");
-
-                std::mem::forget(pcm);
+        let chunk = if available > buffer_length { buffer_length } else { available };
+        if chunk > 0 {
+            for i in 0..state.get_channel_count() {
+                if let Ok(element_obj) = env.get_object_array_element(channels.into(), i as usize) {
+                    let pcm = buffers.pcm(i as usize, chunk);
+                    let element: JObject = element_obj;
+                    
+                    let _ = env.set_float_array_region(element.into_raw(), 0, pcm);
+                }
             }
+
+            if env.exception_check()? {
+                env.exception_clear()?;
+                return Ok(-1);
+            }
+
+            vorbis_synthesis_read(state.dsp_state.as_mut_ptr(), chunk as i32);
         }
 
-        if env.exception_check().unwrap() {
-            env.exception_clear().unwrap();
-            return -1
-        };
-
-        vorbis_synthesis_read(state.dsp_state.as_mut_ptr(), chunk as i32);
-    };
-
-    chunk as jint
+        Ok(chunk as jint)
+    }).resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
 #[no_mangle]
