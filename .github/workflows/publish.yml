@@ -1,24 +1,49 @@
 name: Publish
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ main ]
 
 concurrency:
   group: "publish"
   cancel-in-progress: true
 
 jobs:
+  # Wait for build workflow to complete
+  wait-for-build:
+    name: Wait for build to complete
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for build workflow
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-name: 'Build x86_64-unknown-linux-gnu'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+      
+      - name: Wait for Windows build
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-name: 'Build x86_64-pc-windows-msvc'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+      
+      - name: Wait for macOS build
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-name: 'Build macOS universal binary'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
   linux:
+    needs: wait-for-build
     strategy:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
-          - target: i686-unknown-linux-gnu
-            deps: apt-get install -y gcc-multilib
-          - target: aarch64-unknown-linux-gnu
-            deps: apt-get install -y gcc-aarch64-linux-gnu
-          - target: armv7-unknown-linux-gnueabihf
-            deps: apt-get install -y gcc-arm-linux-gnueabihf
 
     name: Publish ${{ matrix.target }}
     runs-on: ubuntu-latest
@@ -52,49 +77,8 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  linux-musl:
-    strategy:
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-musl
-            arch: x86_64
-          - target: aarch64-unknown-linux-musl
-            arch: aarch64
-
-    name: Publish ${{ matrix.target }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    container:
-      image: clux/muslrust:stable
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-      
-      - name: Install Essentials
-        run: |
-          apt-get update -y
-          apt-get upgrade -y
-          apt-get install -y gcc g++ musl-tools cmake curl openjdk-17-jdk-headless
-      
-      - name: Install Rust toolchain
-        run: rustup target add x86_64-unknown-linux-musl ${{ matrix.target }}
-      
-      - name: Install musl cross-compiler
-        run: |
-          apt-get install -y musl-dev
-          ln -s /usr/bin/g++ /usr/bin/x86_64-linux-musl-g++ || true
-          ln -s /usr/bin/gcc /usr/bin/x86_64-linux-musl-gcc || true
-      
-      - name: Build and Publish
-        env:
-          RUSTFLAGS: "-C target-feature=-crt-static -C link-args=-static-libgcc"
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew publish -Ptarget=${{ matrix.target }}
-
   windows:
+    needs: wait-for-build
     strategy:
       matrix:
         include:
@@ -128,6 +112,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   macos:
+    needs: wait-for-build
     name: Publish macOS universal binary
     runs-on: macos-14
     permissions:
@@ -140,15 +125,10 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
-
       - name: Install CMake
-        run: brew install cmake
+        run: |
+          brew upgrade cmake || brew install cmake
+          cmake --version
 
       - name: Compile natives
         run: |
