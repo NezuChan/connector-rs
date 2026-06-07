@@ -53,7 +53,7 @@ pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_aac_
     debug!("(aac) fill, decoder: {}, buffer_offset: {}, buffer_length: {}", decoder_handle, buffer_offset, buffer_length);
 
     let input = jni
-        .get_direct_buffer_address(buffer)
+        .get_direct_buffer_address(&buffer)
         .unwrap();
 
     let length = buffer_length as u32;
@@ -78,13 +78,13 @@ pub unsafe extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_aac_
     jni: JNIEnv,
     _: JClass,
     decoder_handle: jlong,
-    buffer: jobject,
+    buffer: JByteBuffer,
     buffer_length: jint,
     flush: jboolean,
 ) -> jint {
     debug!("(aac) decode, decoder_handle: {}, buffer_length: {}, flush: {}", decoder_handle, buffer_length, flush);
 
-    let output = get_direct_short_buffer_address(jni, buffer)
+    let output = get_direct_short_buffer_address(&jni, &buffer)
         .unwrap();
 
     let flush: bool = std::mem::transmute(flush);

@@ -54,17 +54,17 @@ pub extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_opus_OpusDe
     decoder_ptr: jlong,
     input_buffer: JByteBuffer,
     input_size: jint,
-    output_buffer: jobject,
+    output_buffer: JByteBuffer,
     frame_size: jint,
 ) -> jint {
     debug!("(opus) decoder:decode, instance: {}, input_size: {}, frame_size: {}", decoder_ptr, input_size, frame_size);
 
     let decoder = from_ptr!(decoder_ptr as OpusDecoderHandle);
 
-    let input = env.get_direct_buffer_address(input_buffer)
+    let input = env.get_direct_buffer_address(&input_buffer)
         .expect("Unable to resolve input buffer address.");
 
-    let output = get_direct_short_buffer_address(env, output_buffer)
+    let output = get_direct_short_buffer_address(&env, &output_buffer)
         .expect("Unable to resolve output buffer address.");
 
     unsafe { opus_decode(decoder, input.as_ptr(), input_size, output.as_mut_ptr(), frame_size, 0) as i32 }
@@ -113,7 +113,7 @@ pub extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_opus_OpusEn
     jni: JNIEnv,
     _: JClass,
     encoder_ptr: jlong,
-    input_buffer: jobject,
+    input_buffer: JByteBuffer,
     frame_size: jint,
     output_buffer: JByteBuffer,
     output_capacity: jint,
@@ -122,12 +122,16 @@ pub extern "system" fn Java_com_sedmelluq_discord_lavaplayer_natives_opus_OpusEn
 
     let encoder = from_ptr!(encoder_ptr as OpusEncoderHandle);
 
-    let input_ptr = get_direct_short_buffer_address(jni, input_buffer)
+    let input_ptr = get_direct_short_buffer_address(&jni, &input_buffer)
         .expect("Unable to resolve input buffer address.")
         .as_ptr();
 
-    let output_ptr = jni.get_direct_buffer_address(output_buffer)
+    let output_ptr = jni.get_direct_buffer_address(&output_buffer)
         .expect("Unable to resolve output buffer address.")
+        .as_mut_ptr();
+
+    unsafe { opus_encode(encoder, input_ptr, frame_size, output_ptr, output_capacity) as i32 }
+}
         .as_mut_ptr();
 
     unsafe {
