@@ -34,6 +34,8 @@ jobs:
       - name: Install linker dependencies
         if: ${{ matrix.deps != '' }}
         run: |
+          sudo dpkg --add-architecture arm64
+          sudo apt-get update -y
           sudo ${{ matrix.deps }}
           sudo apt-get install -y libmpg123-dev:arm64 libvorbis-dev:arm64
       
@@ -59,8 +61,9 @@ jobs:
       
       - name: Install mpg123 via vcpkg
         run: |
-          vcpkg install mpg123:x64-windows
-          echo "VCPKGRS_DYNAMIC=1" >> $ENV:GITHUB_ENV
+          vcpkg install mpg123:x64-windows libvorbis:x64-windows --triplet x64-windows
+          echo "VCPKG_ROOT=C:\vcpkg" >> $ENV:GITHUB_ENV
+          echo "PKG_CONFIG_PATH=C:\vcpkg\installed\x64-windows\lib\pkgconfig" >> $ENV:GITHUB_ENV
       
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -72,9 +75,9 @@ jobs:
       - name: Run Gradle Build
         run: ./gradlew build -Ptarget=${{ matrix.target }}
 
-  macos:
-    name: Build macOS universal binary
-    runs-on: macos-14
+  macos-x86_64:
+    name: Build macOS x86_64
+    runs-on: macos-13
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -92,14 +95,72 @@ jobs:
         run: |
           rustup target add x86_64-apple-darwin
           cargo build --release --target=x86_64-apple-darwin
+
+      - name: Upload x86_64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-x86_64-lib
+          path: target/x86_64-apple-darwin/release/libconnector.dylib
+
+  macos-aarch64:
+    name: Build macOS aarch64
+    runs-on: macos-14
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: |
+          brew upgrade cmake || brew install cmake
+          brew install mpg123 libogg libvorbis
+          cmake --version
+
+      - name: Compile natives
+        run: |
           rustup target add aarch64-apple-darwin
           cargo build --release --target=aarch64-apple-darwin
+
+      - name: Upload aarch64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-aarch64-lib
+          path: target/aarch64-apple-darwin/release/libconnector.dylib
+
+  macos-universal:
+    name: Combine macOS universal binary
+    runs-on: macos-14
+    needs: [macos-x86_64, macos-aarch64]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Download x86_64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-x86_64-lib
+          path: artifacts/x86_64
+
+      - name: Download aarch64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-aarch64-lib
+          path: artifacts/aarch64
 
       - name: Create target directory for darwin
         run: mkdir -p target/darwin/release
 
       - name: Combine to universal dylib
-        run: lipo -create -output target/darwin/release/libconnector.dylib target/**/release/*.dylib
+        run: lipo -create -output target/darwin/release/libconnector.dylib artifacts/x86_64/libconnector.dylib artifacts/aarch64/libconnector.dylib
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
 
       - name: Run Gradle Build
         run: ./gradlew build -Ptarget=darwin -x cargoBuild
