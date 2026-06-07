@@ -56,7 +56,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y cmake libmpg123-dev libvorbis-dev
+          sudo apt-get install -y cmake libmpg123-dev
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -69,6 +69,7 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CFLAGS: "-fPIC"
+          PKG_CONFIG_PATH: "/nonexistent"
 
   linux-aarch64:
     needs: wait-for-build
@@ -86,7 +87,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y cmake libmpg123-dev libvorbis-dev
+          sudo apt-get install -y cmake libmpg123-dev
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -99,6 +100,7 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CFLAGS: "-fPIC"
+          PKG_CONFIG_PATH: "/nonexistent"
 
   macos-x86_64:
     needs: wait-for-build
@@ -116,13 +118,15 @@ jobs:
       - name: Install dependencies
         run: |
           brew upgrade cmake || brew install cmake
-          brew install mpg123 libogg libvorbis
+          brew install mpg123
           cmake --version
 
       - name: Compile natives
         run: |
           rustup target add x86_64-apple-darwin
           cargo build --release --target=x86_64-apple-darwin
+        env:
+          PKG_CONFIG_PATH: "/nonexistent"
 
       - name: Upload x86_64 artifact
         uses: actions/upload-artifact@v4
@@ -146,13 +150,15 @@ jobs:
       - name: Install dependencies
         run: |
           brew upgrade cmake || brew install cmake
-          brew install mpg123 libogg libvorbis
+          brew install mpg123
           cmake --version
 
       - name: Compile natives
         run: |
           rustup target add aarch64-apple-darwin
           cargo build --release --target=aarch64-apple-darwin
+        env:
+          PKG_CONFIG_PATH: "/nonexistent"
 
       - name: Upload aarch64 artifact
         uses: actions/upload-artifact@v4
