@@ -16,18 +16,15 @@ jobs:
             deps: apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
     name: Build ${{ matrix.target }}
-    runs-on: ubuntu-latest
-    container:
-      image: ubuntu:22.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
       
-      - name: Install Essentials
+      - name: Install dependencies
         run: |
-          apt-get update -y
-          apt-get upgrade -y
-          apt-get install -y curl gcc g++ cmake openjdk-17-jdk-headless
+          sudo apt-get update -y
+          sudo apt-get install -y cmake
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -36,7 +33,7 @@ jobs:
       
       - name: Install linker dependencies
         if: ${{ matrix.deps != '' }}
-        run: ${{ matrix.deps }}
+        run: sudo ${{ matrix.deps }}
       
       - name: Run Gradle Build
         run: ./gradlew build -Ptarget=${{ matrix.target }}
