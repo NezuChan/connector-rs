@@ -1,7 +1,7 @@
 [![build](https://github.com/NezuChan/connector-rs/actions/workflows/build.yml/badge.svg)](https://github.com/NezuChan/connector-rs/actions/workflows/build.yml)
 [![publish](https://github.com/NezuChan/connector-rs/actions/workflows/publish.yml/badge.svg)](https://github.com/NezuChan/connector-rs/actions/workflows/publish.yml)
 
-# connector-rs
+# connector-rs (still in development)
 
 High-performance native audio codec implementations for Lavaplayer, written in Rust with JNI bindings.
 
